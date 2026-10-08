@@ -384,3 +384,24 @@
   .ds-prosody .ds-card-top { flex-wrap: wrap; }
   .ds-prosody.ds-expanded { inset: 0; }
 }
+
+.ds-prosody {
+  --ds-content-selection: rgba(125,227,205,.10);
+  --ds-content-axis: #3d5059;
+  --ds-content-stale: #b99c6e;
+  --ds-content-waveform-source: #8eacb5;
+  --ds-content-output: #7de3cd;
+  --ds-content-playhead: #fff;
+  --ds-content-shade: #0c141888;
+  --ds-content-voiced: #7de3cd16;
+  --ds-content-grid: #34464b;
+  --ds-content-label: #9aafb4;
+  --ds-content-pitch-source: #96a4aa;
+  --ds-content-target: #efbc73;
+  --ds-content-tail: #efbc7399;
+  --ds-content-word-highlight: #7de3cd12;
+  --ds-content-relative-grid: #314149;
+  --ds-content-zero: #587478;
+  --ds-content-invalid: #f2a48b;
+  --ds-content-curve: #e9bf80;
+}

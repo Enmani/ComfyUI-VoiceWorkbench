@@ -1,3 +1,4 @@
+import { contentTheme } from "./content-theme.js";
 import { BASE, element, request, api } from "./common.js";
 
 export const audioMethods = {
@@ -86,23 +87,24 @@ loadAudio() {
   },
 drawWaves() { for (const id of Object.keys(this.audio)) this.drawWave(id); },
 drawWave(id) {
+    const theme = contentTheme(this.root);
     const card = this.audio[id]; if (!card?.data) return;
     const width = card.canvas.clientWidth; const height = card.canvas.clientHeight; if (!width || !height) return;
     const scale = window.devicePixelRatio || 1; card.canvas.width = Math.round(width * scale); card.canvas.height = Math.round(height * scale);
     const ctx = card.canvas.getContext("2d"); if (!ctx) return; ctx.scale(scale, scale); ctx.clearRect(0, 0, width, height);
     const word = id === "original" ? this.word() : this.line().last_result?.words?.find(word => word.id === this.selected);
     if (word && Number.isFinite(word.start_time) && Number.isFinite(word.end_time)) {
-      ctx.fillStyle = "rgba(125,227,205,.10)"; ctx.fillRect(word.start_time / card.data.duration * width, 0, (word.end_time - word.start_time) / card.data.duration * width, height);
+      ctx.fillStyle = theme.selection; ctx.fillRect(word.start_time / card.data.duration * width, 0, (word.end_time - word.start_time) / card.data.duration * width, height);
     }
-    ctx.strokeStyle = "#3d5059"; ctx.beginPath(); ctx.moveTo(0, height / 2); ctx.lineTo(width, height / 2); ctx.stroke();
-    ctx.strokeStyle = id === "result" && this.isResultStale() ? "#b99c6e" : id === "original" ? "#8eacb5" : "#7de3cd";
+    ctx.strokeStyle = theme.axis; ctx.beginPath(); ctx.moveTo(0, height / 2); ctx.lineTo(width, height / 2); ctx.stroke();
+    ctx.strokeStyle = id === "result" && this.isResultStale() ? theme.stale : id === "original" ? theme.waveformSource : theme.output;
     ctx.lineWidth = 1; ctx.beginPath();
     for (let x = 0; x < width; x += 2) {
       const index = Math.floor(x / width * card.data.peaks.length); const amplitude = Math.max(1, card.data.peaks[index] * height * .46);
       ctx.moveTo(x, height / 2 - amplitude); ctx.lineTo(x, height / 2 + amplitude);
     }
     ctx.stroke();
-    if (card.player.currentTime > 0) { const x = card.player.currentTime / card.data.duration * width; ctx.strokeStyle = "#fff"; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke(); }
+    if (card.player.currentTime > 0) { const x = card.player.currentTime / card.data.duration * width; ctx.strokeStyle = theme.playhead; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke(); }
   },
 onKey(event) {
     if (!(event.ctrlKey || event.metaKey) || this.busy || this.drag) return;

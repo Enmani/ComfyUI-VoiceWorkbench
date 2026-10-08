@@ -1,3 +1,4 @@
+import { contentTheme } from "./content-theme.js";
 import { PITCH_RANGE, CURVE_MIN_GAP, CURVE_MAX_POINTS, copy, cleanCurve, limit, curveValue, mappedSourceTime, mapAnchors, element, button } from "./common.js";
 
 export const pitchMethods = {
@@ -48,19 +49,20 @@ refreshTailControls() {
     this.tailHint.textContent=target?`${(target.end_time-target.start_time).toFixed(3)} s · Absolute pitch overrides the relative curve in this region, with blended joins` : "Select a green voiced region or click Rising ending. Shaded regions are unvoiced or unstable.";
   },
 drawRealPitch(ctx,width,height) {
+    const theme = contentTheme(this.root);
     const analysis=this.line().pitch_analysis,target=this.line().tail_target;
     if(!analysis)return;
     const y=hz=>height-10-(Math.log2(hz/75)/3)*(height-20), frames=analysis.frames;
-    ctx.fillStyle="#0c141888";ctx.fillRect(0,0,width,height);
-    for(const r of analysis.regions){ctx.fillStyle="#7de3cd16";ctx.fillRect(this.sourceToX(r.start_time),0,this.sourceToX(r.end_time)-this.sourceToX(r.start_time),height);}
-    for(const hz of [75,150,300,600]){ctx.strokeStyle="#34464b";ctx.setLineDash([2,5]);ctx.beginPath();ctx.moveTo(0,y(hz));ctx.lineTo(width,y(hz));ctx.stroke();ctx.fillStyle="#9aafb4";ctx.font="10px sans-serif";ctx.fillText(`${hz} Hz`,5,y(hz)-2);}ctx.setLineDash([]);
+    ctx.fillStyle=theme.shade;ctx.fillRect(0,0,width,height);
+    for(const r of analysis.regions){ctx.fillStyle=theme.voiced;ctx.fillRect(this.sourceToX(r.start_time),0,this.sourceToX(r.end_time)-this.sourceToX(r.start_time),height);}
+    for(const hz of [75,150,300,600]){ctx.strokeStyle=theme.grid;ctx.setLineDash([2,5]);ctx.beginPath();ctx.moveTo(0,y(hz));ctx.lineTo(width,y(hz));ctx.stroke();ctx.fillStyle=theme.label;ctx.font=theme.font;ctx.fillText(`${hz} Hz`,5,y(hz)-2);}ctx.setLineDash([]);
     const plot=(data,color,mapX,value)=>{ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();let connected=false;for(const f of data){if(!f.reliable||!f.hz){connected=false;continue;}const px=mapX(f.time),py=y(value(f));if(connected)ctx.lineTo(px,py);else ctx.moveTo(px,py);connected=true;}ctx.stroke();};
-    plot(frames,"#96a4aa",t=>this.sourceToX(t),f=>f.hz);
-    plot(frames,"#efbc73",t=>this.sourceToX(t),f=>{let hz=f.hz*2**((this.pitch()+curveValue(this.curve(),f.time))/12);if(target){const {start_time:a,end_time:b,start_hz:h,end_hz:k}=target,ramp=Math.min(.02,(b-a)/4),u=limit((f.time-a)/(b-a),0,1);let w=limit(Math.min((f.time-a)/ramp,(b-f.time)/ramp),0,1);w=w*w*(3-2*w);hz=Math.exp(Math.log(hz)*(1-w)+Math.log(h*(k/h)**u)*w);}return hz;});
+    plot(frames,theme.pitchSource,t=>this.sourceToX(t),f=>f.hz);
+    plot(frames,theme.target,t=>this.sourceToX(t),f=>{let hz=f.hz*2**((this.pitch()+curveValue(this.curve(),f.time))/12);if(target){const {start_time:a,end_time:b,start_hz:h,end_hz:k}=target,ramp=Math.min(.02,(b-a)/4),u=limit((f.time-a)/(b-a),0,1);let w=limit(Math.min((f.time-a)/ramp,(b-f.time)/ramp),0,1);w=w*w*(3-2*w);hz=Math.exp(Math.log(hz)*(1-w)+Math.log(h*(k/h)**u)*w);}return hz;});
     const result=this.line().last_result;
     if(result?.pitch_analysis&&!this.isResultStale()){
       const pts=result.curve.map(p=>[p.time,p.multiplier]);
-      plot(result.pitch_analysis.frames,"#7de3cd",t=>{let a=0,b=this.sourceDuration;for(let i=0;i<28;i++){const m=(a+b)/2;if(mappedSourceTime(m,pts)<t)a=m;else b=m;}return this.sourceToX((a+b)/2);},f=>f.hz);
+      plot(result.pitch_analysis.frames,theme.output,t=>{let a=0,b=this.sourceDuration;for(let i=0;i<28;i++){const m=(a+b)/2;if(mappedSourceTime(m,pts)<t)a=m;else b=m;}return this.sourceToX((a+b)/2);},f=>f.hz);
     }
     if(!this.tailHandles){this.tailHandles=[];for(const key of ["start_hz","end_hz"]){const handle=button("",()=>{},"ds-tail-point");handle.setAttribute("role","slider");handle.setAttribute("aria-label",key==="start_hz"?"Ending start pitch":"Ending end pitch");
       handle.addEventListener("pointerdown",e=>{if(this.busy||this.drag||e.button!==0)return;e.preventDefault();this.pausePlayers();this.drag={kind:"tail-target",key,handle,before:this.snapshot(),pointer:e.pointerId};handle.setPointerCapture(e.pointerId);});
@@ -70,7 +72,7 @@ drawRealPitch(ctx,width,height) {
       handle.addEventListener("keydown",e=>{if(e.key==="Escape"&&this.drag?.kind==="tail-target"){end(true);return;}if(this.busy||!["ArrowUp","ArrowDown"].includes(e.key))return;e.preventDefault();const before=this.snapshot(),next={...this.line().tail_target,[key]:this.line().tail_target[key]+(e.key==="ArrowUp"?1:-1)*(e.shiftKey?1:5)};if(!this.tailError(next)){this.line().tail_target=next;this.checkpoint(before);this.refreshEditing();}});
       this.curveArea.append(handle);this.tailHandles.push(handle);}}
     this.tailHandles.forEach((h,i)=>{h.hidden=!target||!this.realPitchMode;h.disabled=this.busy||(!!this.drag&&this.drag.kind!=="tail-target");if(target){const hz=target[i?"end_hz":"start_hz"];h.style.left=`${this.sourceToX(target[i?"end_time":"start_time"])}px`;h.style.top=`${y(hz)}px`;h.setAttribute("aria-valuenow",String(hz));h.title=`Target ${hz} Hz · Drag or use up/down arrows`;}});
-    if(target){ctx.strokeStyle="#efbc7399";ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(this.sourceToX(target.start_time),y(target.start_hz));ctx.lineTo(this.sourceToX(target.end_time),y(target.end_hz));ctx.stroke();ctx.setLineDash([]);}
+    if(target){ctx.strokeStyle=theme.tail;ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(this.sourceToX(target.start_time),y(target.start_hz));ctx.lineTo(this.sourceToX(target.end_time),y(target.end_hz));ctx.stroke();ctx.setLineDash([]);}
   },
 buildCurveToolbar() {
     const toolbar = element("div", "ds-curve-toolbar");
@@ -193,6 +195,7 @@ mapCoordinate(value, inverse = false) { return inverse ? this.xToSource(value) :
 pitchToY(pitch) { return 9 + (3 - pitch) / 6 * (this.curveHeight - 18); },
 yToPitch(y) { return limit(3 - (y - 9) / (this.curveHeight - 18) * 6, ...PITCH_RANGE); },
 drawCurve() {
+    const theme = contentTheme(this.root);
     if (!this.curveCanvas || !this.document || !this.wordElements || !this.curveArea) return;
     const width = this.curveArea.clientWidth, height = this.curveHeight;
     if (!width || !height) return;
@@ -206,14 +209,14 @@ drawCurve() {
     if(this.tailHandles)for(const h of this.tailHandles)h.hidden=!this.realPitchMode||!this.line().tail_target;
     if (this.realPitchMode) { this.drawRealPitch(ctx, width, height); this.updateContextPlayhead(); return; }
     const selectedBounds = this.wordElements.get(this.selected)?.wrapper.getBoundingClientRect(), contextLeft = this.wordContext.getBoundingClientRect().left;
-    if (selectedBounds) { ctx.fillStyle = "#7de3cd12"; ctx.fillRect(selectedBounds.left - contextLeft, 0, selectedBounds.width, height); }
+    if (selectedBounds) { ctx.fillStyle = theme.wordHighlight; ctx.fillRect(selectedBounds.left - contextLeft, 0, selectedBounds.width, height); }
     for (const pitch of [-3, -2, -1, 0, 1, 2, 3]) {
-      const y = this.pitchToY(pitch); ctx.strokeStyle = pitch ? "#314149" : "#587478"; ctx.lineWidth = 1;
+      const y = this.pitchToY(pitch); ctx.strokeStyle = pitch ? theme.relativeGrid : theme.zero; ctx.lineWidth = 1;
       ctx.setLineDash(pitch ? [2, 5] : [5, 4]); ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
     }
     ctx.setLineDash([]);
     const points = cleanCurve(this.curve()), anchors = this.sourceAnchors(), end = mapAnchors(anchors, this.sourceDuration);
-    ctx.strokeStyle = this.invalidCurves().length ? "#f2a48b" : "#e9bf80"; ctx.lineWidth = 2; ctx.beginPath();
+    ctx.strokeStyle = this.invalidCurves().length ? theme.invalid : theme.curve; ctx.lineWidth = 2; ctx.beginPath();
     for (let x = 0; x <= end; x += 2) { const y = this.pitchToY(this.pitch() + curveValue(points, mapAnchors(anchors, x, true))); if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
     ctx.lineTo(end, this.pitchToY(this.pitch() + curveValue(points, this.sourceDuration))); ctx.stroke();
     // Reuse point elements while dragging so pointer capture and keyboard focus survive.
