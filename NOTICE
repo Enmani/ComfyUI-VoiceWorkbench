@@ -1,0 +1,9 @@
+ComfyUI Voice Workbench
+Copyright (C) 2026 Enmani
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Derived from the author's local Dialogue Studio word-prosody workbench.
+Praat and Parselmouth are separate GPL-licensed dependencies.
+IndexTTS2, AuK, Qwen3 ForcedAligner and SenseVoice are optional third-party
+engines/models governed by their own source and model licenses.
+Model weights and private voice recordings are not distributed here.

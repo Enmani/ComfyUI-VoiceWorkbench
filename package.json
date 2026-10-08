@@ -1,0 +1,10 @@
+{
+  "devDependencies": {
+    "acorn": "^8.19.0"
+  },
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "check": "node tools/check.mjs"
+  }
+}

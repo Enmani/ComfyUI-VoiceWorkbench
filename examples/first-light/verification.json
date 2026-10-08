@@ -1,0 +1,6 @@
+{
+  "expected": "The sun is rising. Take a breath, and let the story begin.",
+  "recognized": "the sun is rising take a breath and let the story begin",
+  "text_match": true,
+  "note": "Automatic transcript check. Listen before accepting."
+}

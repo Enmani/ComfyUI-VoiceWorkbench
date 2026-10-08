@@ -1,0 +1,29 @@
+{
+  "engines": {
+    "IndexTTS2": {
+      "python": "/path/to/index-tts/.venv/bin/python",
+      "root": "/path/to/index-runtime",
+      "repository": "/path/to/index-tts",
+      "model": "/path/to/IndexTTS-2",
+      "version": "your-installed-revision"
+    },
+    "AuK": {
+      "python": "/path/to/auk/.venv/bin/python",
+      "root": "/path/to/auk-runtime",
+      "repository": "/path/to/AuK",
+      "model": "/path/to/AuK-Base",
+      "qwen_model": "/path/to/Qwen2.5-Omni-3B"
+    }
+  },
+  "aligner": {
+    "python": "/path/to/aligner/.venv/bin/python",
+    "model": "/path/to/Qwen3-ForcedAligner-0.6B-hf",
+    "language": "English"
+  },
+  "verifier": {
+    "python": "/path/to/verifier/.venv/bin/python",
+    "model": "/path/to/sensevoice/model.int8.onnx",
+    "tokens": "/path/to/sensevoice/tokens.txt",
+    "language": "en"
+  }
+}

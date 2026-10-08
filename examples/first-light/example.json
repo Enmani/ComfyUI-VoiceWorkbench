@@ -1,0 +1,106 @@
+{
+  "text": "The sun is rising. Take a breath, and let the story begin.",
+  "words": [
+    {
+      "text": "The",
+      "start_time": 0.04,
+      "end_time": 0.12,
+      "id": "w0"
+    },
+    {
+      "text": "sun",
+      "start_time": 0.12,
+      "end_time": 0.44,
+      "id": "w1"
+    },
+    {
+      "text": "is",
+      "start_time": 0.44,
+      "end_time": 0.6,
+      "id": "w2"
+    },
+    {
+      "text": "rising",
+      "start_time": 0.6,
+      "end_time": 1.24,
+      "id": "w3"
+    },
+    {
+      "text": "Take",
+      "start_time": 2.12,
+      "end_time": 2.36,
+      "id": "w4"
+    },
+    {
+      "text": "a",
+      "start_time": 2.36,
+      "end_time": 2.44,
+      "id": "w5"
+    },
+    {
+      "text": "breath",
+      "start_time": 2.44,
+      "end_time": 2.84,
+      "id": "w6"
+    },
+    {
+      "text": "and",
+      "start_time": 3.4,
+      "end_time": 3.56,
+      "id": "w7"
+    },
+    {
+      "text": "let",
+      "start_time": 3.56,
+      "end_time": 3.8,
+      "id": "w8"
+    },
+    {
+      "text": "the",
+      "start_time": 3.8,
+      "end_time": 3.88,
+      "id": "w9"
+    },
+    {
+      "text": "story",
+      "start_time": 3.88,
+      "end_time": 4.36,
+      "id": "w10"
+    },
+    {
+      "text": "begin",
+      "start_time": 4.36,
+      "end_time": 4.84,
+      "id": "w11"
+    }
+  ],
+  "pitch_curve": [
+    {
+      "source_time": 0.0,
+      "delta_semitones": 0
+    },
+    {
+      "source_time": 1.477,
+      "delta_semitones": 0.7
+    },
+    {
+      "source_time": 3.2,
+      "delta_semitones": -0.4
+    },
+    {
+      "source_time": 4.676,
+      "delta_semitones": 0.8
+    }
+  ],
+  "provenance": {
+    "engine": "IndexTTS2",
+    "reference": "reference.wav",
+    "reference_engine": "Windows SAPI \u00b7 Microsoft David Desktop",
+    "purpose": "Generic synthetic English default case",
+    "private_recording": false,
+    "alignment": "Qwen3-ForcedAligner-0.6B, English, CPU",
+    "alignment_is_estimated": true,
+    "date": "2026-10-08",
+    "source": "https://github.com/index-tts/index-tts"
+  }
+}

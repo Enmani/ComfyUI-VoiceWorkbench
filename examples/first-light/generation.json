@@ -1,0 +1,46 @@
+{
+  "engine": "IndexTTS2",
+  "seed": 1815948717,
+  "text": "The sun is rising. Take a breath, and let the story begin.",
+  "options": {
+    "direction": "Calm, warm and gently curious",
+    "strength": 0.4,
+    "engine": "IndexTTS2",
+    "target_seconds": 0.0
+  },
+  "emo_vector": [
+    0.36,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.02,
+    0.02
+  ],
+  "sample_rate": 22050,
+  "duration": 4.922630385487528,
+  "segments": 1,
+  "waveform_splicing": false,
+  "sampling": {
+    "max_mel_tokens": 1600,
+    "do_sample": true,
+    "top_p": 0.8,
+    "top_k": 30,
+    "temperature": 0.8
+  },
+  "inference_options": {
+    "use_random": false,
+    "emo_alpha": 1.0,
+    "max_text_tokens_per_segment": 200,
+    "interval_silence": 0,
+    "use_fp16": true,
+    "use_cuda_kernel": false,
+    "use_deepspeed": false,
+    "use_accel": false,
+    "use_torch_compile": false
+  },
+  "synthesis_seconds": 40.781,
+  "worker_seconds": 258.437,
+  "source": "https://github.com/index-tts/index-tts"
+}

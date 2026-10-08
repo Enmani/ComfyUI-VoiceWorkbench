@@ -1,0 +1,26 @@
+{
+  "id": "7977e734-d7d4-4c85-9a12-b4fba43c5f70",
+  "revision": 0,
+  "last_node_id": 1,
+  "last_link_id": 0,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "VWVoiceEditor",
+      "pos": [160, 160],
+      "size": [450, 160],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [{"name":"preview_audio", "type":"STRING", "links":null}],
+      "properties": {"Node name for S&R":"VWVoiceEditor"},
+      "widgets_values": ["", "line-1"]
+    }
+  ],
+  "links": [],
+  "groups": [],
+  "config": {},
+  "extra": {"ds":{"scale":1,"offset":[0,0]}},
+  "version": 0.4
+}

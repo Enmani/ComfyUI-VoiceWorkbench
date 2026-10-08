@@ -1,0 +1,5 @@
+aiohttp>=3.10,<4
+numpy>=1.26,<3
+praat-parselmouth>=0.4.6,<0.5
+scipy>=1.11,<2
+soundfile>=0.12,<1

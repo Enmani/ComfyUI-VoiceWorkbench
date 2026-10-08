@@ -1,0 +1,12 @@
+.venv/
+node_modules/
+.local/
+__pycache__/
+*.pyc
+config.json
+workspace/
+.coverage
+dist/
+build/
+*.egg-info/
+artifacts/

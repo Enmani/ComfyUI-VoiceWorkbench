@@ -1,0 +1,3 @@
+html, body { margin: 0; height: 100%; background: #141b1f; }
+body { min-width: 320px; }
+#workbench { height: 100dvh; }
