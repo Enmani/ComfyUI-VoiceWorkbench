@@ -11,6 +11,8 @@ Executed on Windows, 2026-10-08.
 - Mouse dragging changed the selected pitch point and marked its preview stale. At 720 px and 320 px, page width remained within the viewport; the sentence timeline scrolls independently.
 - Independent English SenseVoice recognition matched the bundled AI recording's transcript, ignoring punctuation and letter case.
 
-The standalone UI is verified independently of the user's active workspace. Linux/macOS system speech, optional AuK English editing and arbitrary third-party model installations remain untested locally. GitHub Actions provides CPU regression coverage on Windows and Linux; its results are separate from local checks.
+GitHub Actions passed all four CPU regression jobs on Windows and Linux with Python 3.10 and 3.12.
+
+The standalone UI is verified independently of the user's active workspace. Linux/macOS system speech, optional AuK English editing and arbitrary third-party model installations remain untested locally.
 
 Audio naturalness requires listening. A successful alignment verifies usable word coordinates, not recognition accuracy.
