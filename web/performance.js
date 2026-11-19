@@ -2,12 +2,20 @@ import { BASE, seconds, element, button, request, api } from "./common.js";
 
 export const performanceMethods = {
 performanceKey() { return `ds-performance:${this.path}:${this.line().id}`; },
+setPerformanceOpen(open) {
+    this.performanceOpen = !!open;
+    if (this.performanceCard) this.performanceCard.hidden = !this.performanceOpen;
+    if (this.generateButton) this.generateButton.setAttribute("aria-expanded", String(this.performanceOpen));
+    if (this.performanceOpen) this.refreshVersions();
+  },
 buildPerformanceControls() {
     this.performanceCandidates ||= {};
-    const card=element("details","ds-performance");card.open=!!this.performanceOpen;this.performanceCard=card;
-    card.append(element("summary","","Generate & perform"));
-    card.addEventListener("toggle",()=>{if(card.open)this.refreshVersions();});
-    card.addEventListener("toggle",()=>{this.performanceOpen=card.open;});
+    const card=element("aside","ds-drawer");card.hidden=!this.performanceOpen;this.performanceCard=card;
+    card.setAttribute("aria-label","Generate & perform: new takes and saved versions");
+    const drawerHead=element("div","ds-drawer-head");
+    const closeButton=button("✕",()=>this.setPerformanceOpen(false),"ds-icon-button");
+    closeButton.setAttribute("aria-label","Close Generate & perform");
+    drawerHead.append(element("strong","","Generate & perform"),closeButton);
     const body=element("div","ds-performance-body");
     const modelRow=element("div","ds-performance-row");this.performanceEngine=element("select");this.performanceEngine.setAttribute("aria-label","Speech engine");
     for(const entry of this.engineEntries || []){const opt=element("option","",entry.label + (entry.available ? "" : " · Configure first"));opt.value=entry.id;opt.disabled=!entry.available;this.performanceEngine.append(opt);}
@@ -23,7 +31,7 @@ buildPerformanceControls() {
     this.performanceStatus=element("p","ds-muted");
     this.performancePlayer=element("audio");
     body.append(this.buildVersionControls());
-    card.append(body);
+    card.append(drawerHead,body);
     try {const saved=JSON.parse(sessionStorage.getItem(this.performanceKey())||"null");if(saved?.candidate_path)this.performanceCandidates[this.line().id]=saved;}catch{}
     this.updatePerformanceControls();this.refreshVersions();return card;
   },
@@ -66,7 +74,7 @@ async generatePerformance() {
       if(this.textPending()){this.setStatus("Regenerate changed text with a speech engine before using AuK.","error");return;}
     }
     this.commitPerformanceControls();
-    this.pausePlayers();this.performancePlayer?.pause();this.performanceOpen=true;this.performanceCard.open=true;
+    this.pausePlayers();this.performancePlayer?.pause();this.setPerformanceOpen(true);
     this.busy=true;this.setStatus("Submitting a full-line generation task…");
     try {
       const ticket=await request("/performance",{path:this.path,line_id:this.line().id,document:this.document,base_revision:this.document.revision});

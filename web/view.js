@@ -22,14 +22,33 @@ build() {
     if (!line.timing_segments?.some(s=>s.id===this.selectedSegment)) this.selectedSegment="word:"+this.selected;
     const header = element("header", "ds-header");
     const heading = element("div", "ds-heading");
-    heading.append(element("h2", "", "Voice Workbench · Time & Pitch"), element("p", "ds-muted", this.document.title || "Speech performance editor"));
+    heading.append(element("h2", "", "Voice Workbench"), element("p", "ds-muted", this.document.title || "Speech performance editor"));
     const topActions = element("div", "ds-header-actions");
-    topActions.append(element("span", "ds-badge", "Continuous resynthesis"));
     this.saveBadge = element("span", "ds-badge"); topActions.append(this.saveBadge);
+    this.generateButton = button("Generate", () => this.setPerformanceOpen(!this.performanceOpen), "ds-primary");
+    this.generateButton.title = "Generate & perform: create a new take or work with saved versions";
+    topActions.append(this.generateButton);
+    const menuWrap = element("div", "ds-menu-wrap");
+    this.headerMenu = element("div", "ds-menu"); this.headerMenu.hidden = true; this.headerMenu.setAttribute("role", "menu");
+    this.menuButton = button("⋯", () => {
+      const open = this.headerMenu.hidden;
+      this.headerMenu.hidden = !open; this.menuButton.setAttribute("aria-expanded", String(open));
+    }, "ds-icon-button");
+    this.menuButton.setAttribute("aria-label", "More actions"); this.menuButton.setAttribute("aria-haspopup", "menu"); this.menuButton.setAttribute("aria-expanded", "false");
+    this.headerMenu.addEventListener("click", () => { this.headerMenu.hidden = true; this.menuButton.setAttribute("aria-expanded", "false"); });
     this.reloadButton = button("Reload", () => this.reload());
     this.reloadButton.title = "Reload the latest document and retain compatible unsaved edits";
     this.expandButton = button("Expand editor", () => this.setExpanded(!this.expanded));
-    topActions.append(this.reloadButton, this.expandButton);
+    this.resetButton = button("Reset line", () => { const before = this.snapshot(); Object.assign(this.line(), { tail_target: null, edits: [], timing_edits: [], speed: 1, pitch_semitones: 0, pitch_curve: [] }); this.selectedPoint = null; this.checkpoint(before); this.refreshEditing(); this.setStatus("This line's speed, pitch and local edits were reset."); });
+    this.resetButton.title = "Reset this line's speed, pitch, curve and ending edits";
+    this.resetGlobalButton = button("Reset global controls", () => {
+      const before = this.snapshot(); Object.assign(this.line(), { speed: 1, pitch_semitones: 0 });
+      this.checkpoint(before); this.refreshEditing(); this.setStatus("Global speed and pitch reset. Curve and ending edits are retained.");
+    });
+    this.resetGlobalButton.title = "Reset global speed and pitch; keep local curve and ending edits";
+    this.headerMenu.append(this.reloadButton, this.expandButton, this.resetGlobalButton, this.resetButton);
+    menuWrap.append(this.menuButton, this.headerMenu);
+    topActions.append(menuWrap);
     header.append(heading, topActions); this.root.append(header);
     this.status = element("p", "ds-status"); this.status.setAttribute("role", "status"); this.status.setAttribute("aria-live", "polite"); this.root.append(this.status);
     const editorCard = element("div", "ds-editor-card");
@@ -40,7 +59,16 @@ build() {
       const option = element("option", "", `${item.speaker || "Speech"} · ${item.draft_text ?? item.text}`); option.value = item.id; select.append(option);
     }
     select.value = line.id; select.addEventListener("change", () => this.changeLine(select.value)); this.lineSelect = select;
-    selectLabel.append(select); cardTop.append(selectLabel, element("span", "ds-muted", "1. Adjust   2. Preview & compare"));
+    selectLabel.append(select);
+    this.viewMode = this.realPitchMode ? "tail" : (this.viewMode === "tail" ? "pitch" : (this.viewMode || "pitch"));
+    const viewSwitch = element("div", "ds-segmented"); viewSwitch.setAttribute("role", "group"); viewSwitch.setAttribute("aria-label", "Editor view: pitch curve, timing or voiced ending");
+    this.viewButtons = {};
+    for (const [mode, label] of [["pitch", "Pitch"], ["timing", "Timing"], ["tail", "Ending"]]) {
+      const item = button(label, () => this.setViewMode(mode), "ds-seg-button");
+      item.dataset.mode = mode; item.setAttribute("aria-pressed", String(this.viewMode === mode));
+      this.viewButtons[mode] = item; viewSwitch.append(item);
+    }
+    cardTop.append(selectLabel, viewSwitch); this.syncViewChrome();
     const viewport = element("div", "ds-glyph-viewport"); this.glyphViewport = viewport;
     this.wordContext = element("div", "ds-word-context");
     this.glyphs = element("div", "ds-glyphs"); this.wordContext.append(this.buildCurveSurface(), this.glyphs); viewport.append(this.wordContext);
@@ -89,17 +117,20 @@ build() {
     this.restoreTextButton.hidden = !this.textPending();
     const textActions = element("div", "ds-text-status");
     textActions.append(this.editTextButton, this.restoreTextButton, element("span", "ds-muted", this.textPending() ? "Text draft has no matching audio yet. Regeneration archives local edits and retains global speed and pitch." : "Double-click a word to edit the text at that position."));
-    editorCard.append(cardTop, this.buildPerformanceControls(), this.buildCurveToolbar(), this.buildTailControls(), this.buildTiming(), board, this.buildSegmentControls(), detail, this.conflictNote, textActions, element("p", "ds-hint", "Blue handles change word duration; green handles extend voiced endings; purple blocks are existing pauses. Double-click text to edit, or the curve to add a point."));
-    this.root.append(editorCard);
+    const performancePanel = this.buildPerformanceControls();
+    const inspector = element("div", "ds-inspector");
+    const wordGroup = element("div", "ds-inspector-group"); wordGroup.append(detail);
+    const segmentGroup = element("div", "ds-inspector-group"); segmentGroup.append(this.buildSegmentControls());
+    inspector.append(wordGroup, segmentGroup);
+    editorCard.append(cardTop, this.buildCurveToolbar(), this.buildTailControls(), this.buildTiming(), board, inspector, this.conflictNote, textActions, element("p", "ds-hint", "Blue handles change word duration; green handles extend voiced endings; purple blocks are existing pauses. Double-click text to edit, or the curve to add a point."));
+    this.root.append(editorCard, performancePanel);
     const toolbar = element("div", "ds-toolbar");
-    this.undoButton = button("↶ Undo", () => this.undo()); this.undoButton.title = "Ctrl / ⌘ + Z";
-    this.redoButton = button("↷ Redo", () => this.redo()); this.redoButton.title = "Ctrl / ⌘ + Shift + Z";
-    this.resetButton = button("Reset line", () => { const before = this.snapshot(); Object.assign(this.line(), { tail_target: null, edits: [], timing_edits: [], speed: 1, pitch_semitones: 0, pitch_curve: [] }); this.selectedPoint = null; this.checkpoint(before); this.refreshEditing(); this.setStatus("This line's speed, pitch and local edits were reset."); });
-    this.resetButton.title = "Reset this line's speed, pitch, curve and ending edits";
+    this.undoButton = button("↶", () => this.undo(), "ds-icon-button"); this.undoButton.title = "Undo (Ctrl / ⌘ + Z)"; this.undoButton.setAttribute("aria-label", "Undo");
+    this.redoButton = button("↷", () => this.redo(), "ds-icon-button"); this.redoButton.title = "Redo (Ctrl / ⌘ + Shift + Z)"; this.redoButton.setAttribute("aria-label", "Redo");
     this.saveButton = button("Retry save", () => this.save());
     this.saveButton.hidden = true;
     this.renderButton = button("Preview", () => this.render(), "ds-primary");
-    toolbar.append(this.undoButton, this.redoButton, this.resetButton, element("span", "ds-toolbar-spacer"), this.saveButton, this.renderButton); this.root.append(toolbar);
+    toolbar.append(this.undoButton, this.redoButton, element("span", "ds-toolbar-spacer"), this.saveButton, this.renderButton); this.root.append(toolbar);
     const comparison = element("div", "ds-comparison");
     comparison.append(this.audioCard("original", "Original"), this.audioCard("result", "Edited")); this.root.append(comparison);
     if (!this.initialFit) {
@@ -152,6 +183,7 @@ buildCurveSurface() {
 buildGlobalControls() {
     const section = element("div", "ds-global-controls"); this.parameterControls = {};
     for (const config of [
+      { field: "speed", label: "Speed", min: SPEED_RANGE[0], max: SPEED_RANGE[1], step: .01, unit: "×", left: "Slower", center: "Original speed", right: "Faster", reset: 1 },
       { field: "pitch_semitones", label: "Global pitch", min: PITCH_RANGE[0], max: PITCH_RANGE[1], step: .1, unit: "semitones", left: "Low", center: "Original pitch", right: "High", reset: 0 },
     ]) {
       const control = element("div", "ds-parameter"); const heading = element("label", "ds-parameter-heading");
@@ -193,13 +225,17 @@ buildGlobalControls() {
       range.setAttribute("aria-orientation", "vertical");
       this.parameterControls[config.field] = { number, range, center, config };
     }
-    const actions = element("div", "ds-global-actions");
-    this.resetGlobalButton = button("Reset global controls", () => {
-      const before = this.snapshot(); Object.assign(this.line(), { speed: 1, pitch_semitones: 0 });
-      this.checkpoint(before); this.refreshEditing(); this.setStatus("Global speed and pitch reset. Curve and ending edits are retained.");
-    });
-    this.resetGlobalButton.title = "Reset global speed and pitch; keep local curve and ending edits";
-    actions.append(this.resetGlobalButton, element("span", "ds-muted", "Keep curve and endings")); section.append(actions); return section;
+    return section;
+  },
+setViewMode(mode) {
+    this.viewMode = mode; this.realPitchMode = mode === "tail"; this.syncViewChrome(); this.refreshEditing();
+  },
+syncViewChrome() {
+    if (!this.root) return;
+    this.root.classList.toggle("ds-view-pitch", this.viewMode === "pitch");
+    this.root.classList.toggle("ds-view-timing", this.viewMode === "timing");
+    this.root.classList.toggle("ds-view-tail", this.viewMode === "tail");
+    if (this.viewButtons) for (const [mode, item] of Object.entries(this.viewButtons)) item.setAttribute("aria-pressed", String(this.viewMode === mode));
   },
 setParameter(field, value) {
     if (!Number.isFinite(value)) return;
@@ -307,7 +343,7 @@ updateTiming() {
     for (let t = 0; t <= target + .08; t += step) {
       const tick = element("span", "", `${t.toFixed(1)}s`); tick.style.left = `${t * this.pixelsPerSecond}px`; this.ruler.append(tick);
     }
-    this.parameterControls.pitch_semitones.range.style.height = `${this.curveHeight}px`;
+    for (const control of Object.values(this.parameterControls || {})) control.range.style.height = `${this.curveHeight}px`;
     for (const item of [this.durationInput, this.fitButton, this.zoomInButton, this.zoomOutButton]) item.disabled = this.busy || !!this.drag;
   }
 };
