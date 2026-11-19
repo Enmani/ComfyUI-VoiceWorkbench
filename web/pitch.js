@@ -45,7 +45,7 @@ refreshTailControls() {
     this.tailModeButton.disabled=blocked;this.tailPresetButton.disabled=blocked||!this.line().pitch_analysis?.regions?.length;
     this.tailClearButton.disabled=blocked||!target;
     for(const [key,input] of Object.entries(this.tailInputs)){input.disabled=blocked||!target;input.value=target?target[key].toFixed(key.endsWith("hz")?0:3):"";}
-    this.tailControls.hidden=this.textPending();
+    this.tailControls.hidden=this.textPending()||this.viewMode!=="tail";
     this.tailHint.textContent=target?`${(target.end_time-target.start_time).toFixed(3)} s · Absolute pitch overrides the relative curve in this region, with blended joins` : "Select a green voiced region or click Rising ending. Shaded regions are unvoiced or unstable.";
   },
 drawRealPitch(ctx,width,height) {
